@@ -8,4 +8,4 @@ import App from './App'
 //   </React.StrictMode>
 // )
 
-ReactDOM.createRoot(document.getElementById('root')).render(<App name='Vlad' />);
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
