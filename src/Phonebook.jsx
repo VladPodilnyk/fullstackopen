@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import axios from 'axios';
+import { useEffect, useState } from 'react'
 import { Header, Button } from './common';
 
 export const predefData = [
@@ -68,16 +69,26 @@ const PhonebookList = (props) => {
     );
 }
 
-const Phonebook = (props) => {
-    const init = listToMap(props.init)
+const Phonebook = () => {
+    //const init = listToMap()
     // in memory storage
-    const [persons, setPersons] = useState(init);
+    const [persons, setPersons] = useState(new Map());
     // stores filter result
-    const [filter, setFilter] = useState(init);
+    const [filter, setFilter] = useState(new Map());
 
     const [newName, setNewName] = useState('');
     const [newNumber, setNewNumber] = useState('');
     const [filterValue, setFilterValue] = useState('');
+
+
+    useEffect(() => {
+        axios.get('http://localhost:3000/persons').then(response => {
+            const init = listToMap(response.data);
+            setPersons(init);
+            setFilter(init);
+        });
+    }, []);
+
 
     const onFilterChange = (event) => {
         const inputValue = event.target.value.toLowerCase().trim();
