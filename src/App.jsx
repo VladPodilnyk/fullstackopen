@@ -1,7 +1,7 @@
 import AnectodesApp from "./Anecdotes";
 import CountrySearchApp from "./CountrySearch";
 import FeedBackApp from "./Feedback";
-import Phonebook, { predefData } from "./Phonebook";
+import Phonebook from "./Phonebook";
 
 
 const App = () => {

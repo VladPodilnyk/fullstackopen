@@ -1,22 +1,16 @@
-import axios from 'axios';
-import { useEffect, useState } from 'react'
-import { Header, Button } from './common';
-
-export const predefData = [
-    { name: 'Arto Hellas', number: '040-123456' },
-    { name: 'Ada Lovelace', number: '39-44-5323523' },
-    { name: 'Dan Abramov', number: '12-43-234345' },
-    { name: 'Mary Poppendieck', number: '39-23-6423122' }
-  ];
+// TODO: refector this shitty code ASAP.
+import { useEffect, useState } from 'react';
+import { Button, Header } from './common';
+import server from './server';
 
 const listToMap = (list) => {
     const map = new Map();
-    list.forEach(element => map.set(element.name, element.number));
+    list.forEach(element => map.set(element.name.trim().toLowerCase(), [element.number, element.id]));
     return map;
 }
 
 const PhonebookListElement = (props) => (
-    <li>{props.name} {props.number}</li>
+    <li>{props.name} {props.number} <Button text='delete' onClick={props.onDelete} /></li>
 )
 
 const PhonebookInputElement = (props) => (
@@ -45,13 +39,21 @@ const PhonebookController = (props) => {
 const PhonebookList = (props) => {
     if (props.filterValue === '' || props.filterValue === undefined) {
         // ugly workaround that I need to implement bc js Map doesn't have a `map` method :/
-        console.log(`here we go filter value = ${props.filter}`);
         const array = [...props.records];
+        //console.log(`onDelete (id = ${array[0][1][1]})`);
         return (
             <>
             <Header name='Numbers' />
             <ul>
-                { array.map(record => <PhonebookListElement key={record[0]} name={record[0]} number={record[1]} />) }
+                { 
+                    array.map(record => 
+                        <PhonebookListElement 
+                            key={record[0]} 
+                            name={record[0]} 
+                            number={record[1][0]} 
+                            onDelete={props.onDelete(record[0], record[1][1])} />
+                    )
+                }
             </ul>
             </>
         );
@@ -61,14 +63,23 @@ const PhonebookList = (props) => {
     const array = [...props.filteredRecords];
     return (
         <>
-        <Header name='Numbers' />
-        <ul>
-            { array.map(record => <PhonebookListElement key={record[0]} name={record[0]} number={record[1]} />) }
-        </ul>
+            <Header name='Numbers' />
+            <ul>
+                { 
+                    array.map(record => 
+                        <PhonebookListElement 
+                            key={record[0]} 
+                            name={record[0]} 
+                            number={record[1]} 
+                            onDelete={props.onDelete(record[0], record[1][1])} />
+                    ) 
+                }
+            </ul>
         </>
     );
 }
 
+// TODO: actually this needs to be better organized, I don't like this huge number of local arrow functions.
 const Phonebook = () => {
     //const init = listToMap()
     // in memory storage
@@ -82,13 +93,28 @@ const Phonebook = () => {
 
 
     useEffect(() => {
-        axios.get('http://localhost:3000/persons').then(response => {
+        server.getAll().then(response => {
             const init = listToMap(response.data);
             setPersons(init);
             setFilter(init);
         });
     }, []);
 
+    // this looks awful, must be a name or an id, but not both xD
+    const onDelete = (name, id) => {
+        return () => {
+            if (window.confirm(`Are you sure you want to remove ${name} from a phonebook?`)) {
+                server.deleteItem(id).then(response => {
+                    console.log(response);
+                });
+
+                const updatedMap = new Map([...persons].filter(person => person[0] != name));
+                setPersons(updatedMap);
+                setFilter(updatedMap);
+                setFilterValue('');
+            }
+        }
+    }
 
     const onFilterChange = (event) => {
         const inputValue = event.target.value.toLowerCase().trim();
@@ -117,15 +143,30 @@ const Phonebook = () => {
             return;
         }
 
-        if (persons.has(newName)) {
-            alert(`${newName} phone number has been already in the list.`);
-            return;
-        }
+        if (persons.has(newName.trim().toLowerCase()) && window.confirm(`Are you sure you want to update number for ${name}?`) ) {
+            const person = persons.get(newName);
+            const id = person[1]
+            const updatedData = { name: newName, number: newNumber, id: id };
+            //console.log(`upd data for id=${id} person = ${person[0]} | ${person[1]}`, updatedData);
+            server.update(id, updatedData).then(response => {
+                console.log(response);
+                const updatedList = new Map([...persons]);
+                updatedList.set(newName, [newNumber, id]);
+                setPersons(updatedList);
+                setNewName('');
+                setNewNumber('');
+            });
+        } else {
+            const userData = { name: newName, number: newNumber }
 
-        const updatedList = new Map([...persons, [newName, newNumber]]);
-        setPersons(updatedList);
-        setNewName('');
-        setNewNumber('');
+            server.create(userData).then(response => {
+                console.log(response);
+                const updatedList = new Map([...persons, [newName, [newNumber, response.data.id]]]);
+                setPersons(updatedList);
+                setNewName('');
+                setNewNumber('');
+            });
+        }
     };
 
     const onNameChangeHandler = (event) => setNewName(event.target.value);
@@ -142,7 +183,7 @@ const Phonebook = () => {
             onNumberChange={onNumberChangeHandler}
             onSubmitHandler={addNumber}
         />
-        <PhonebookList records={persons} filterValue={filterValue} filteredRecords={filter} />
+        <PhonebookList records={persons} filterValue={filterValue} filteredRecords={filter} onDelete={onDelete}/>
         </>
     );
 }
