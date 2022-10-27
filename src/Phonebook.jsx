@@ -26,6 +26,7 @@ const PhonebookSearch = (props) => {
 const PhonebookController = (props) => {
     return (
         <>
+        <Notification message={props.notificationMessage} msgType={props.notificationType} />
         <Header name='add number'/>
         <form onSubmit={props.onSubmitHandler}>
             <PhonebookInputElement name='name' currentInput={props.name} onChangeHandler={props.onNameChange} />
@@ -79,6 +80,18 @@ const PhonebookList = (props) => {
     );
 }
 
+const Notification = ({ message, msgType }) => {
+    if (message === null) {
+      return null
+    }
+  
+    return (
+      <div className={msgType}>
+        {message}
+      </div>
+    )
+  }
+
 // TODO: actually this needs to be better organized, I don't like this huge number of local arrow functions.
 const Phonebook = () => {
     //const init = listToMap()
@@ -90,6 +103,9 @@ const Phonebook = () => {
     const [newName, setNewName] = useState('');
     const [newNumber, setNewNumber] = useState('');
     const [filterValue, setFilterValue] = useState('');
+
+    const [notificationMessage, setNotificationMessage] = useState(null);
+    const [notificationType, setNotificationType] = useState('notification');
 
 
     useEffect(() => {
@@ -130,6 +146,14 @@ const Phonebook = () => {
         setFilter(filteredValues);
     };
 
+    const setNotification = (message) => {
+        setNotificationMessage(message);
+        setTimeout(() => {
+            setNotificationMessage(null);
+        }, 3000);
+        return;
+    };
+
     const addNumber = (event) => {
         event.preventDefault();
 
@@ -155,6 +179,16 @@ const Phonebook = () => {
                 setPersons(updatedList);
                 setNewName('');
                 setNewNumber('');
+            })
+            .then(_ => setNotification(`Updated number for ${newName}`))
+            .catch(error => {
+                // FIXME: looks ugly, but I doesn't care for now :)
+                console.log(`Got error updating data, details ${error}`);
+                setNotification(`Data for ${newName} has been alreay deleted.`);
+                setNotificationType('error');
+                setTimeout(() => {
+                    setNotificationType('notification');
+                }, 3000);
             });
         } else {
             const userData = { name: newName, number: newNumber }
@@ -165,7 +199,7 @@ const Phonebook = () => {
                 setPersons(updatedList);
                 setNewName('');
                 setNewNumber('');
-            });
+            }).then(_ => setNotification(`Add a phonenumber for ${newName}`));
         }
     };
 
@@ -182,6 +216,8 @@ const Phonebook = () => {
             onNameChange={onNameChangeHandler}
             onNumberChange={onNumberChangeHandler}
             onSubmitHandler={addNumber}
+            notificationMessage={notificationMessage}
+            notificationType={notificationType}
         />
         <PhonebookList records={persons} filterValue={filterValue} filteredRecords={filter} onDelete={onDelete}/>
         </>
