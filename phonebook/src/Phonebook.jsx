@@ -1,4 +1,6 @@
 // TODO: refector this shitty code ASAP.
+// FIXME: notification styles are broken :(
+
 import { useEffect, useState } from 'react';
 import { Button, Header } from './common';
 import server from './server';
@@ -93,6 +95,7 @@ const Notification = ({ message, msgType }) => {
   }
 
 // TODO: actually this needs to be better organized, I don't like this huge number of local arrow functions.
+// as well as a length of the function.. yikes :/
 const Phonebook = () => {
     //const init = listToMap()
     // in memory storage
@@ -122,6 +125,16 @@ const Phonebook = () => {
             if (window.confirm(`Are you sure you want to remove ${name} from a phonebook?`)) {
                 server.deleteItem(id).then(response => {
                     console.log(response);
+                })
+                .then(_ => setNotification(`Deleted number for ${name}`))
+                .catch(error => {
+                    // FIXME: looks ugly, but I doesn't care for now :) Dublicated code :(
+                    console.log(`Got error while deleting data, details ${error}`);
+                    setNotificationType('error');
+                    setNotification(`Data for ${name} has been alreay deleted.`);
+                    // setTimeout(() => {
+                    //     setNotificationType(_ => 'notification');
+                    // }, 5000);
                 });
 
                 const updatedMap = new Map([...persons].filter(person => person[0] != name));
@@ -150,7 +163,7 @@ const Phonebook = () => {
         setNotificationMessage(message);
         setTimeout(() => {
             setNotificationMessage(null);
-        }, 3000);
+        }, 5000);
         return;
     };
 
@@ -184,11 +197,11 @@ const Phonebook = () => {
             .catch(error => {
                 // FIXME: looks ugly, but I doesn't care for now :)
                 console.log(`Got error updating data, details ${error}`);
-                setNotification(`Data for ${newName} has been alreay deleted.`);
                 setNotificationType('error');
+                setNotification(`Data for ${newName} has been alreay deleted.`);
                 setTimeout(() => {
                     setNotificationType('notification');
-                }, 3000);
+                }, 5000);
             });
         } else {
             const userData = { name: newName, number: newNumber }
