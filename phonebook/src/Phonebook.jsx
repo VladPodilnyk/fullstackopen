@@ -1,8 +1,8 @@
-// TODO: refector this shitty code ASAP.
-// FIXME: notification styles are broken :(
-
 import { useEffect, useState } from 'react';
-import { Button, Header } from './common';
+import { Header, Notification } from './components/generic';
+import PhonebookController from './components/PhonebookController';
+import PhonebookList from './components/PhonebookList';
+import PhonebookSearch from './components/PhonebookSearch';
 import server from './server';
 
 const listToMap = (list) => {
@@ -11,228 +11,92 @@ const listToMap = (list) => {
     return map;
 }
 
-const PhonebookListElement = (props) => (
-    <li>{props.name} {props.number} <Button text='delete' onClick={props.onDelete} /></li>
-)
-
-const PhonebookInputElement = (props) => (
-    <div>{props.name}: <input value={props.currentInput} onChange={props.onChangeHandler} /></div>
-)
-
-const PhonebookSearch = (props) => {
-    return (
-        <PhonebookInputElement name={props.name} currentInput={props.currentInput} onChangeHandler={props.onChangeHandler} />
-    );
-}
-
-const PhonebookController = (props) => {
-    return (
-        <>
-        <Notification message={props.notificationMessage} msgType={props.notificationType} />
-        <Header name='add number'/>
-        <form onSubmit={props.onSubmitHandler}>
-            <PhonebookInputElement name='name' currentInput={props.name} onChangeHandler={props.onNameChange} />
-            <PhonebookInputElement name='number' currentInput={props.number} onChangeHandler={props.onNumberChange} />
-            <Button type='submit' text='add' />
-        </form>
-        </>
-    );
-}
-
-const PhonebookList = (props) => {
-    if (props.filterValue === '' || props.filterValue === undefined) {
-        // ugly workaround that I need to implement bc js Map doesn't have a `map` method :/
-        const array = [...props.records];
-        //console.log(`onDelete (id = ${array[0][1][1]})`);
-        return (
-            <>
-            <Header name='Numbers' />
-            <ul>
-                { 
-                    array.map(record => 
-                        <PhonebookListElement 
-                            key={record[0]} 
-                            name={record[0]} 
-                            number={record[1][0]} 
-                            onDelete={props.onDelete(record[0], record[1][1])} />
-                    )
-                }
-            </ul>
-            </>
-        );
-    }
-
-    // ugly workaround that I need to implement bc js Map doesn't have a `map` method :/
-    const array = [...props.filteredRecords];
-    return (
-        <>
-            <Header name='Numbers' />
-            <ul>
-                { 
-                    array.map(record => 
-                        <PhonebookListElement 
-                            key={record[0]} 
-                            name={record[0]} 
-                            number={record[1]} 
-                            onDelete={props.onDelete(record[0], record[1][1])} />
-                    ) 
-                }
-            </ul>
-        </>
-    );
-}
-
-const Notification = ({ message, msgType }) => {
-    if (message === null) {
-      return null
-    }
-  
-    return (
-      <div className={msgType}>
-        {message}
-      </div>
-    )
-  }
-
-// TODO: actually this needs to be better organized, I don't like this huge number of local arrow functions.
-// as well as a length of the function.. yikes :/
 const Phonebook = () => {
-    //const init = listToMap()
     // in memory storage
     const [persons, setPersons] = useState(new Map());
-    // stores filter result
-    const [filter, setFilter] = useState(new Map());
+    // stores filter key
+    const [filterKey, setFilterKey] = useState('');
 
-    const [newName, setNewName] = useState('');
-    const [newNumber, setNewNumber] = useState('');
-    const [filterValue, setFilterValue] = useState('');
+    const personDataDefault = { name: '', number: '' };
+    const [personData, setPersonData] = useState(personDataDefault);
 
-    const [notificationMessage, setNotificationMessage] = useState(null);
-    const [notificationType, setNotificationType] = useState('notification');
+    const defaultMessage = { message: '', type: 'notification' };
+    const [message, setMessage] = useState({ message: '', type: 'notification' });
 
-
+    // preload phonebook from a db (on component mount);
     useEffect(() => {
         server.getAll().then(response => {
             const init = listToMap(response.data);
             setPersons(init);
-            setFilter(init);
         });
     }, []);
 
-    // this looks awful, must be a name or an id, but not both xD
-    const onDelete = (name, id) => {
-        return () => {
-            if (window.confirm(`Are you sure you want to remove ${name} from a phonebook?`)) {
-                server.deleteItem(id).then(response => {
-                    console.log(response);
-                })
-                .then(_ => setNotification(`Deleted number for ${name}`))
-                .catch(error => {
-                    // FIXME: looks ugly, but I doesn't care for now :) Dublicated code :(
-                    console.log(`Got error while deleting data, details ${error}`);
-                    setNotificationType('error');
-                    setNotification(`Data for ${name} has been alreay deleted.`);
-                    // setTimeout(() => {
-                    //     setNotificationType(_ => 'notification');
-                    // }, 5000);
-                });
+    // cleans up message
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setMessage(defaultMessage);
+        }, 3000);
 
-                const updatedMap = new Map([...persons].filter(person => person[0] != name));
-                setPersons(updatedMap);
-                setFilter(updatedMap);
-                setFilterValue('');
-            }
+        return () => clearTimeout(timer);
+    }, [message]);
+
+    const onFilterChange = (event) => setFilterKey(event.target.value);
+    const onDataChange = (event) => {
+        const { name, value } = event.target;
+        setPersonData({ ...personData, [name]: value });
+    };
+
+    const errorHandler = (error, msg) => {
+        console.log(`Error: `, error);
+        setMessage({ message: msg, type: 'error' });
+    }
+
+    const onSubmit = (event) => {
+        event.preventDefault();
+        if (personData.name === '' || personData === '') {
+            alert('Data is incomplete, please fill in all fields');
+            return;
+        }
+
+        const newName = personData.name.trim().toLowerCase();
+        if (persons.has(newName) && window.confirm(`Are you sure you want to update number for ${personData.name}?`)) {
+            const [_, id] = persons.get(newName);
+            server.update(id, personData).then(response => {
+                const updatedData = new Map([...persons]);
+                updatedData.set(newName, [personData.number, response.id]);
+                setPersons(updatedData);
+                setMessage({ ...defaultMessage, message: `Updated number for ${personData.name}` })
+            }).catch(error => errorHandler(error, `Failed to update number for ${personData.name}`));
+        } else {    
+            server.create(personData).then(response => {
+                const updatedData = new Map([...persons, [personData.name, [personData.number, response.data.id]]]);
+                setPersons(updatedData);
+                setMessage({ ...defaultMessage, message: `Add number for person ${personData.name}` });
+            }).catch(error => errorHandler(error, `Failed to add number for ${personData.name}`));
+        }
+
+        setPersonData(personDataDefault);
+    };
+
+    const onDelete = (personId, personName) => {
+        if (window.confirm(`Are you sure you want to remove ${personName} and id ${personId} from a phonebook?`)) {
+            server.deleteItem(personId)
+            .then(_ => setMessage({ ...defaultMessage, message: `Deleted number for ${personName}` }))
+            .catch(error => errorHandler(error, `Data for ${personName} has been alreay deleted.`));
+
+            const updatedMap = new Map([...persons].filter(person => person[0] != personName));
+            setPersons(updatedMap);
         }
     }
 
-    const onFilterChange = (event) => {
-        const inputValue = event.target.value.toLowerCase().trim();
-        setFilterValue(event.target.value);
-       
-        const filteredValues = new Map();
-        persons.forEach((value, key) => {
-            if (key.toLowerCase().startsWith(inputValue)) {
-                filteredValues.set(key, value);
-            }
-        });
-
-        setFilter(filteredValues);
-    };
-
-    const setNotification = (message) => {
-        setNotificationMessage(message);
-        setTimeout(() => {
-            setNotificationMessage(null);
-        }, 5000);
-        return;
-    };
-
-    const addNumber = (event) => {
-        event.preventDefault();
-
-        if (newName === '') {
-            alert('Name field is empty.');
-            return;
-        }
-
-        if (newNumber === '') {
-            alert('Number field is empty.');
-            return;
-        }
-
-        if (persons.has(newName.trim().toLowerCase()) && window.confirm(`Are you sure you want to update number for ${name}?`) ) {
-            const person = persons.get(newName);
-            const id = person[1]
-            const updatedData = { name: newName, number: newNumber, id: id };
-            //console.log(`upd data for id=${id} person = ${person[0]} | ${person[1]}`, updatedData);
-            server.update(id, updatedData).then(response => {
-                console.log(response);
-                const updatedList = new Map([...persons]);
-                updatedList.set(newName, [newNumber, id]);
-                setPersons(updatedList);
-                setNewName('');
-                setNewNumber('');
-            })
-            .then(_ => setNotification(`Updated number for ${newName}`))
-            .catch(error => {
-                // FIXME: looks ugly, but I doesn't care for now :)
-                console.log(`Got error updating data, details ${error}`);
-                setNotificationType('error');
-                setNotification(`Data for ${newName} has been alreay deleted.`);
-                setTimeout(() => {
-                    setNotificationType('notification');
-                }, 5000);
-            });
-        } else {
-            const userData = { name: newName, number: newNumber }
-
-            server.create(userData).then(response => {
-                console.log(response);
-                const updatedList = new Map([...persons, [newName, [newNumber, response.data.id]]]);
-                setPersons(updatedList);
-                setNewName('');
-                setNewNumber('');
-            }).then(_ => setNotification(`Add a phonenumber for ${newName}`));
-        }
-    };
-
-    const onNameChangeHandler = (event) => setNewName(event.target.value);
-    const onNumberChangeHandler = (event) => setNewNumber(event.target.value);
 
     return (
         <>
         <Header name='Phonebook' />
-        <PhonebookSearch name='filter shown with' currentInput={filterValue} onChangeHandler={onFilterChange} />
-        <PhonebookController
-            name={newName}
-            number={newNumber}
-            onNameChange={onNameChangeHandler}
-            onNumberChange={onNumberChangeHandler}
-            onSubmitHandler={addNumber}
-            notificationMessage={notificationMessage}
-            notificationType={notificationType}
-        />
-        <PhonebookList records={persons} filterValue={filterValue} filteredRecords={filter} onDelete={onDelete}/>
+        <PhonebookSearch name='filter shown with' currentInput={filterKey} onChangeHandler={onFilterChange} />
+        <Notification value={message} />
+        <PhonebookController personData={personData} onDataChange={onDataChange} onSubmitHandler={onSubmit} />
+        <PhonebookList filterKey={filterKey} records={persons} onDeleteAction={onDelete} />
         </>
     );
 }
