@@ -1,3 +1,4 @@
+const { response } = require('express');
 const express = require('express');
 const app = express();
 
@@ -23,6 +24,12 @@ let notes = [
         "number": "39-23-6423122"
     }
 ];
+
+app.get('/info', (_, response) => {
+    const now = new String(new Date());
+    const page = `<p>Phonebook has info for ${notes.length} people <br>${now}</p>`;
+    response.send(page);
+});
 
 app.get('/api/persons', (_, response) => {
     response.json(notes);
