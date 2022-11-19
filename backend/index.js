@@ -2,7 +2,8 @@ const { response } = require('express');
 const express = require('express');
 const app = express();
 
-let notes = [
+// TODO: array is highly inefficient data structure, replace with map!
+let persons = [
     { 
         "id": 1,
         "name": "Arto Hellas", 
@@ -31,8 +32,19 @@ app.get('/info', (_, response) => {
     response.send(page);
 });
 
+app.get('/api/persons/:id', (request, response) => {
+    const id = Number(request.params.id);
+    const entity = persons.find(entry => entry.id === id);
+
+    if (entity) {
+        response.json(entity);
+    } else {
+        response.status(404).end();
+    }
+});
+
 app.get('/api/persons', (_, response) => {
-    response.json(notes);
+    response.json(persons);
 });
 
 const PORT = 3000
