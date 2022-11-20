@@ -1,7 +1,28 @@
+const morgan = require('morgan');
 const express = require('express');
 const app = express();
 
+// middleware
+// TODO: move to a separate file
+const unknownEndpoint = (_, response) => {
+    response.status(404).send({ error: 'unknown endpoint' })
+}
+
+morgan.token('body', (request, _) => JSON.stringify(request.body));
+
+const appLogger = (request, response, next) => {
+    if (request.method === 'POST') {
+        const log = morgan(':method :url :status :res[content-length] - :response-time ms :body');
+        log(request, response, next);
+    } else {
+        const compactLogger = morgan('tiny');
+        compactLogger(request, response, next);
+    }
+}
+
+
 app.use(express.json());
+app.use(appLogger);
 
 const generateRandomId = () => {
     return Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
@@ -86,6 +107,8 @@ app.delete('/api/persons/:id', (request, response) => {
 });
 
 const PORT = 3000
+
+app.use(unknownEndpoint);
 app.listen(PORT, () => {
     console.log(`Server started on port ${PORT}`);
 });
