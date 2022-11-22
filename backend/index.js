@@ -25,6 +25,7 @@ const appLogger = (request, response, next) => {
 app.use(cors());
 app.use(express.json());
 app.use(appLogger);
+app.use(express.static('build'));
 
 const generateRandomId = () => {
     return Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);

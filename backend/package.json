@@ -7,6 +7,9 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
+    "build:ui": "rm -rf build && cd ../phonebook && yarn build && cp -r dist ../backend/build",
+    "deploy": "fly deploy",
+    "deploy:full": "yarn build:ui && yarn deploy",
     "test": "echo \"Error no test specified\" && exit 1"
   },
   "dependencies": {
