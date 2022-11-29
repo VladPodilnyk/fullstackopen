@@ -81,11 +81,12 @@ const Phonebook = () => {
     const onDelete = (personId, personName) => {
         if (window.confirm(`Are you sure you want to remove ${personName} and id ${personId} from a phonebook?`)) {
             server.deleteItem(personId)
-            .then(_ => setMessage({ ...defaultMessage, message: `Deleted number for ${personName}` }))
-            .catch(error => errorHandler(error, `Data for ${personName} has been alreay deleted.`));
-
-            const updatedMap = new Map([...persons].filter(person => person[0] != personName));
-            setPersons(updatedMap);
+            .then(_ => {
+                setMessage({ ...defaultMessage, message: `Deleted number for ${personName}` });
+                const updatedMap = new Map([...persons].filter(person => person[0] != personName));
+                setPersons(updatedMap);
+            })
+            .catch(error => errorHandler(error, `Failed to delete data for ${personName} due to ${error.message}`));
         }
     }
 

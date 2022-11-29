@@ -1,117 +1,109 @@
+require('dotenv').config()
+
 const cors = require('cors');
-const morgan = require('morgan');
+const appLogger = require('./middleware/logging');
+const unknownEndpoint = require('./middleware/unknown');
+const errorHandler = require('./middleware/errors');
 const express = require('express');
+
+const mongo = require('mongoose');
+const Person = require('./models/phonebook');
+
 const app = express();
-
-// middleware
-// TODO: move to a separate file
-const unknownEndpoint = (_, response) => {
-    response.status(404).send({ error: 'unknown endpoint' })
-}
-
-morgan.token('body', (request, _) => JSON.stringify(request.body));
-
-const appLogger = (request, response, next) => {
-    if (request.method === 'POST') {
-        const log = morgan(':method :url :status :res[content-length] - :response-time ms :body');
-        log(request, response, next);
-    } else {
-        const compactLogger = morgan('tiny');
-        compactLogger(request, response, next);
-    }
-}
-
 
 app.use(cors());
 app.use(express.json());
 app.use(appLogger);
 app.use(express.static('build'));
 
-const generateRandomId = () => {
-    return Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
-}
-
-// TODO: array is highly inefficient data structure, replace with map!
-let persons = [
-    { 
-        "id": 1,
-        "name": "Arto Hellas", 
-        "number": "040-123456"
-    },
-    { 
-        "id": 2,
-        "name": "Ada Lovelace", 
-        "number": "39-44-5323523"
-    },
-    { 
-        "id": 3,
-        "name": "Dan Abramov", 
-        "number": "12-43-234345"
-    },
-    { 
-        "id": 4,
-        "name": "Mary Poppendieck", 
-        "number": "39-23-6423122"
-    }
-];
 
 app.get('/info', (_, response) => {
     const now = new String(new Date());
-    const page = `<p>Phonebook has info for ${notes.length} people <br>${now}</p>`;
+    const page = `<p>Server is up and running <br>${now}</p>`;
     response.send(page);
 });
 
-app.get('/api/persons/:id', (request, response) => {
-    const id = Number(request.params.id);
-    const entity = persons.find(entry => entry.id === id);
-
-    if (entity) {
-        response.json(entity);
-    } else {
-        response.status(404).end();
-    }
+app.get('/api/persons/:id', (request, response, next) => {
+    const id = request.params.id;
+    Person.findById(id).then(person => {
+        if (person) {
+            response.json(person);
+        } else {
+            response.status(404).end({ error: `Couldn't find a person with id ${id}` });
+        }
+    })
+    .catch(error => next(error));
 });
 
-app.get('/api/persons', (_, response) => {
-    response.json(persons);
+app.get('/api/persons', (_, response, next) => {
+    Person.find({}).then(list => {
+        response.json(list);
+    })
+    .catch(error => next(error));
 });
 
-app.post('/api/persons', (request, response) => {
-    if (!request.body.name || !request.body.number) {
+app.post('/api/persons', (request, response, next) => {
+    const personName = request.body.name;
+    const personNumber = request.body.number;
+
+    if (!personName || !personNumber) {
         return response.status(404).json({
             error: 'Both name and number MUST be provided.'
         });
     }
 
-    const isExists = persons.find(entry => entry.name === request.body.name);
-    if (isExists) {
+    const newPerson = new Person({
+        name: personName,
+        number: personNumber
+    });
+
+    newPerson.save().then(savedData => {
+        console.log(`added ${personName} number ${personNumber} to phonebook`);
+        response.json(savedData);
+    })
+    .catch(error => next(error));
+});
+
+// TODO: we can send only the person's number here and reduce traffic.
+app.put('/api/persons/:id', (request, response, next) => {
+    const id = request.params.id;
+    const personName = request.body.name;
+    const personNumber = request.body.number;
+
+    if (!personName || !personNumber) {
         return response.status(404).json({
-            error: 'Name MUST be unique value.'
+            error: 'Both name and number MUST be provided.'
         });
     }
-
-    // TODO: retry on duplicated id
-    const personId = generateRandomId();
-
+ 
     const personData = {
-        id: personId,
-        name: request.body.name,
-        number: request.body.number
-    };
+        name: personName,
+        number: personNumber
+    }
 
-    persons = persons.concat(personData);
-    response.json(personData);
+    Person.findByIdAndUpdate(id, personData, { new: true })
+        .then(updatedData => response.json(updatedData))
+        .catch(error => next(error));
 });
 
-app.delete('/api/persons/:id', (request, response) => {
-    const id = Number(request.params.id);
-    persons = persons.filter(entry => entry.id !== id);
-    response.status(204).end();
+
+app.delete('/api/persons/:id', (request, response, next) => {
+    Person.findByIdAndRemove(request.params.id).then(() => {
+        console.log(`Person with id ${request.params.id} has been deleted successfully.`);
+        response.status(204).end();
+    }).catch(error => next(error));
 });
 
-const PORT = process.env.port || 8080;
+const PORT = process.env.PORT;
 
 app.use(unknownEndpoint);
+app.use(errorHandler);
+
 app.listen(PORT, () => {
     console.log(`Server started on port ${PORT}`);
+});
+
+process.on('SIGINT', () => {
+    console.log('closing server gracefully...');
+    mongo.connection.close();
 });

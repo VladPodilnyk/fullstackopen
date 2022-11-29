@@ -8,12 +8,15 @@
     "start": "node index.js",
     "dev": "nodemon index.js",
     "build:ui": "rm -rf build && cd ../phonebook && yarn build && cp -r dist ../backend/build",
+    "environment": "fly secrets set $(grep -v '^#' .env | head -n 1)",
     "deploy": "fly deploy",
+    "deploy:clean": "yarn build:ui && yarn environment && yarn deploy",
     "deploy:full": "yarn build:ui && yarn deploy",
     "test": "echo \"Error no test specified\" && exit 1"
   },
   "dependencies": {
     "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
     "express": "^4.18.2",
     "mongoose": "^6.7.3",
     "morgan": "^1.10.0"
