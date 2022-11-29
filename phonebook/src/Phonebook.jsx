@@ -35,7 +35,7 @@ const Phonebook = () => {
     useEffect(() => {
         const timer = setTimeout(() => {
             setMessage(defaultMessage);
-        }, 3000);
+        }, 5000);
 
         return () => clearTimeout(timer);
     }, [message]);
@@ -66,13 +66,19 @@ const Phonebook = () => {
                 updatedData.set(newName, [personData.number, response.id]);
                 setPersons(updatedData);
                 setMessage({ ...defaultMessage, message: `Updated number for ${personData.name}` })
-            }).catch(error => errorHandler(error, `Failed to update number for ${personData.name}`));
+            }).catch(error => {
+                const reason = error.response.data.error;
+                errorHandler(error, `Failed to update number for ${personData.name} due to ${reason}`);
+            });
         } else {    
             server.create(personData).then(response => {
                 const updatedData = new Map([...persons, [personData.name, [personData.number, response.data.id]]]);
                 setPersons(updatedData);
                 setMessage({ ...defaultMessage, message: `Add number for person ${personData.name}` });
-            }).catch(error => errorHandler(error, `Failed to add number for ${personData.name}`));
+            }).catch(error => {
+                const reason = error.response.data.error;
+                errorHandler(error, `Failed to add number for ${personData.name} due to: ${reason}`);
+            });
         }
 
         setPersonData(personDataDefault);
@@ -86,7 +92,7 @@ const Phonebook = () => {
                 const updatedMap = new Map([...persons].filter(person => person[0] != personName));
                 setPersons(updatedMap);
             })
-            .catch(error => errorHandler(error, `Failed to delete data for ${personName} due to ${error.message}`));
+            .catch(error => errorHandler(error, `Failed to delete data for ${personName} due to: ${error.message}`));
         }
     }
 
