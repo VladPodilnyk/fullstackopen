@@ -1,19 +1,19 @@
 {
-  "name": "phonebook",
+  "name": "bloglist",
   "version": "1.0.0",
   "main": "index.js",
   "author": "Vlad Podilnyk",
   "license": "MIT",
   "scripts": {
-    "start": "node index.js",
-    "dev": "nodemon index.js",
-    "build:ui": "rm -rf build && cd ../phonebook && yarn build && cp -r dist ../phonebook_backend/build",
+    "start": "cross-env NODE_ENV=production node index.js",
+    "dev": "cross-env NODE_ENV=devlopment nodemon index.js",
+    "build:ui": "rm -rf build && cd ../bloglist && yarn build && cp -r dist ../bloglist_backend/build",
     "environment": "fly secrets set $(grep -v '^#' .env | head -n 1)",
     "deploy": "fly deploy",
     "deploy:clean": "yarn build:ui && yarn environment && yarn deploy",
     "deploy:full": "yarn build:ui && yarn deploy",
     "lint": "eslint .",
-    "test": "jest --verbose"
+    "test": "cross-env NODE_ENV=test jest --verbose --runInBand --forceExit"
   },
   "dependencies": {
     "cors": "^2.8.5",
@@ -23,9 +23,11 @@
     "morgan": "^1.10.0"
   },
   "devDependencies": {
+    "cross-env": "^7.0.3",
     "eslint": "^8.28.0",
     "jest": "^29.3.1",
-    "nodemon": "^2.0.20"
+    "nodemon": "^2.0.20",
+    "supertest": "^6.3.2"
   },
   "jest": {
     "testEnvironment": "node"

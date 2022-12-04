@@ -1,0 +1,9 @@
+POST http://localhost:8080/api/blogs
+Content-Type: application/json
+
+{
+    "title": "The Truth",
+    "author": "Terry Pratchett",
+    "url": "https://www.amazon.com/Truth-Discworld-Terry-Pratchett/dp/0380818191",
+    "likes": 10
+}
