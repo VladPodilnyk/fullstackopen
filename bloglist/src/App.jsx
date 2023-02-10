@@ -1,23 +1,30 @@
-import { useState, useEffect } from 'react'
-import Blog from './components/Blog'
-import blogService from './services/blogs'
+import { useState, useEffect, useCallback } from 'react'
+import { ListForm } from "./components/ListForm";
+import { LoginForm } from "./components/LoginForm";
+import service from './services/blogs';
 
 const App = () => {
-  const [blogs, setBlogs] = useState([])
+  const [user, setUser] = useState(null);
+  const [blogList, setBlogList] = useState(null);
+
+  const getAll = useCallback(async () => {
+    const res = await service.getAll();
+    console.log(res);
+    setBlogList(res.data);
+  }, [setBlogList]);
 
   useEffect(() => {
-    blogService.getAll().then(blogs =>
-      setBlogs( blogs )
-    )  
-  }, [])
+    if (user !== null) {
+      getAll();
+    }
+    getAll();
+  }, [user, getAll]);
 
   return (
-    <div>
-      <h2>blogs</h2>
-      {blogs.map(blog =>
-        <Blog key={blog.id} blog={blog} />
-      )}
-    </div>
+    <>
+    {/* {user === null ? <LoginForm setUser={setUser} /> : <ListForm user={user} blogList={blogList} />} */}
+    { blogList === null ? null : <ListForm user={user} blogList={blogList} /> }
+    </>
   )
 }
 

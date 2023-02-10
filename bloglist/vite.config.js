@@ -6,7 +6,10 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/api/persons': {
+      '/api/login': {
+        target: 'http://localhost:3030',
+      },
+      '/api/blogs': {
         target: 'http://localhost:3030',
       },
     }

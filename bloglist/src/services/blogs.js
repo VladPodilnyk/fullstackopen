@@ -1,6 +1,14 @@
 import axios from "axios";
 
-const baseUrl = '/api/persons'
+const loginUrl = '/api/login';
+const baseUrl = '/api/blogs';
+
+// TODO: quite bad thing, but let it be
+let token;
+
+const setToken = (tokenValue) => {
+  token = `Bearer ${tokenValue}`;
+}
 
 const getAll = () => {
   return axios.get(baseUrl);
@@ -11,7 +19,7 @@ const create = (userData) => {
 }
 
 const login = (loginData) => {
-  return  axios.post(baseUrl, loginData);
+  return axios.post(loginUrl, loginData);
 }
 
 // const update = (id, userData) => {
@@ -22,4 +30,4 @@ const login = (loginData) => {
 //     return axios.delete(`${baseUrl}/${id}`);
 // }
 
-export default { getAll, create, login };
+export default { getAll, create, login, setToken };
