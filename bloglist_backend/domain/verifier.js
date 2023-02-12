@@ -1,10 +1,10 @@
-const isTitleAndUrlDefined = (data) => {
-  if (data.title === undefined || data.url === undefined || data.userId === undefined) {
+const idMandatoryDataDefined = (data) => {
+  if (data.title === undefined || data.url === undefined || data.author === undefined) {
     return false;
   }
   return true;
 };
 
 module.exports = {
-  isTitleAndUrlDefined,
+  idMandatoryDataDefined,
 };

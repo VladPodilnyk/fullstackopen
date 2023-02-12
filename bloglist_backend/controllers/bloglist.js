@@ -6,7 +6,7 @@ const User = require('../models/users');
 
 // TODO: refactor it to middleware (ex. 4.20-4.21)
 const getWebTokenFromRequest = (request) => {
-  const authorization = request.get('authorization');
+  const authorization = request.get('Authorization');
   if (authorization && authorization.startsWith('Bearer')) {
     return authorization.replace('Bearer ', '');
   }
@@ -26,13 +26,13 @@ bloglistRouter.post('/', async (request, response) => {
   }
 
 
-  if (verifier.isTitleAndUrlDefined(data)) {
+  if (verifier.idMandatoryDataDefined(data)) {
     const user = await User.findById(decodedToken.id);
 
     const blog = new Blog({
       title: data.title,
       url: data.url,
-      likes: data?.likes ? data.likes : 0,
+      author: data.author,
       user: user._id,
     });
 

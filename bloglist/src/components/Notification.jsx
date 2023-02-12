@@ -1,11 +1,7 @@
-export const Notification = ({ value }) => {
-  if (!value?.message || !value?.type) {
-    return null;
-  }
-
+export const Notification = ({ type, message }) => {
   return (
-    <div className={value.type}>
-        {value.message}
+    <div className={type}>
+        {message}
     </div>
   )
 }

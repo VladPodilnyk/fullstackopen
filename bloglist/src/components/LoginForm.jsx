@@ -1,13 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { PageContainer } from "./PageContainer";
+import { useNotification } from "../hooks/useNotification";
 import service from "../services/blogs";
 
 export const LoginForm = ({ setUser }) => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-    const [isNotificationVisible, setNotificationVisible] = useState(false);
-
-    const invalidDataError = "You have to fill in username and password fields!"
-    let errorMessage;
+    const { isVisible, notificationType, message, showNotification, showError } = useNotification();
 
     const onUsernameChange = (event) => {
         setUsername(event.target.value);
@@ -18,40 +17,36 @@ export const LoginForm = ({ setUser }) => {
     }
 
     const handleLogin = async () => {
-        if (username && username !== '' && password && password !== '') {
+        if (username !== '' && password !== '') {
             try {
                 const res = await service.login({
                     username: username,
                     password: password
                 });
-                setToken(res.data.token);
+                window.localStorage.setItem('verifiedUser', JSON.stringify(res.data));
+                service.setToken(res.data.token);
                 setUser(res.data);
+                setUsername('');
+                setPassword('');
             } catch(e) {
-                errorMessage = e.message;
-                setNotificationVisible(true);
-                setTimeout(
-                    setNotificationVisible(false),
-                    5000
-                );
-        }
+                showError(e.message);
+            }
         } else {
-            errorMessage = invalidDataError;
-            setNotificationVisible(true);
-            setTimeout(
-                setNotificationVisible(false),
-                5000
-            );
+            showError("You have to fill in username and password fields!");
         }
     }
 
 
   return (
-    <div>
-      <h2>log in to application</h2>
-      {isNotificationVisible ? <Notification type="error" message={errorMessage}/> : null}
-      <div>usename: <input name="username" value={username} onChange={onUsernameChange} /></div>
-      <div>assoword: <input name="password" value={password} onChange={onUsernamePassoword} /></div>
+    <PageContainer
+        title={"log in to application"}
+        isNotificationVisible={isVisible}
+        notificationType={notificationType}
+        notificationMessage={message}
+    >
+      <div>username: <input name="username" value={username} onChange={onUsernameChange} /></div>
+      <div>password: <input name="password" value={password} onChange={onUsernamePassoword} /></div>
       <button onClick={handleLogin}>login</button>
-    </div>
+    </PageContainer>
   )
 }
