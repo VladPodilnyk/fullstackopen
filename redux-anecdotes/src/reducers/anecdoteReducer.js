@@ -19,7 +19,7 @@ const asObject = (anecdote) => {
 
 const initialState = anecdotesAtStart.map(asObject)
 
-export const reducer = (state = initialState, action) => {
+export const anecdoteReducer = (state = initialState, action) => {
   console.log('state now: ', state)
   console.log('action', action)
 
@@ -38,7 +38,6 @@ export const reducer = (state = initialState, action) => {
         newAnecdote,
       ];
     default:
-      console.error('FATAL ERROR');
       return state
   }
 }
