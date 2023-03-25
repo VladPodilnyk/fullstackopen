@@ -1,17 +1,14 @@
-export const filterReducer = (state = "", action) => {
-  switch(action.type) {
-    case "SET_SEARCH_TOKEN":
-      return action.payload.search_token;
-    default:
-      return state;
-  }
-};
+import { createSlice } from '@reduxjs/toolkit';
 
-export const createFilterAction = (searchWord) => {
-  return {
-    type: "SET_SEARCH_TOKEN",
-    payload: {
-      search_token: searchWord,
+const filterSlice = createSlice({
+  name: 'filter',
+  initialState: "",
+  reducers: {
+    setSearchToken(_state, action) {
+      return action.payload;
     }
   }
-}
+})
+
+export const { setSearchToken } = filterSlice.actions;
+export const filterReducer = filterSlice.reducer;

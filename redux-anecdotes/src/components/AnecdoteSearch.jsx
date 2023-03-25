@@ -1,12 +1,12 @@
 import { useDispatch } from "react-redux"
-import { createFilterAction } from "../reducers/filterReducer";
+import { setSearchToken } from "../reducers/filterReducer";
 
 export const AnecdoteSearch = () => {
     const dispatch = useDispatch();
 
     const onChange = (event) => {
         const token = event.target.value.toLowerCase().trim();
-        dispatch(createFilterAction(token));
+        dispatch(setSearchToken(token));
     }
 
     return (
