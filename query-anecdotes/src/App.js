@@ -2,12 +2,20 @@ import { useMutation, useQuery, useQueryClient } from 'react-query'
 import AnecdoteForm from './components/AnecdoteForm'
 import Notification from './components/Notification'
 import {anecodesService} from './server/anecdotes';
+import { useNotificationDispatcher } from './context/NotificationContext';
 
 const App = () => {
   const queryClient = useQueryClient();
+  const notificationDispatcher = useNotificationDispatcher();
+
   const voteMut = useMutation(anecodesService.update, {
     onSuccess: () => {
       queryClient.invalidateQueries('anecdotes');
+      notificationDispatcher({ type: 'SET_NOTIFICATION', payload: 'You have voted!!!' });
+      setTimeout(
+        () => notificationDispatcher({ type: 'CLEAN_NOTIFICATION' }),
+        3000
+      );
     }
   });
 

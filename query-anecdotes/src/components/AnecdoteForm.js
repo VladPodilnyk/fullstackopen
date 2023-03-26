@@ -1,11 +1,26 @@
 import { useMutation, useQueryClient } from 'react-query'
 import {anecodesService} from '../server/anecdotes';
+import { useNotificationDispatcher } from '../context/NotificationContext';
 
 const AnecdoteForm = () => {
   const queryClient = useQueryClient();
+  const notificationDispatcher = useNotificationDispatcher();
+
   const createNodeMut = useMutation(anecodesService.createNew, {
     onSuccess: () => {
       queryClient.invalidateQueries('anecdotes');
+      notificationDispatcher({ type: 'SET_NOTIFICATION', payload: 'A new anecdote has been created.' });
+      setTimeout(
+        () => notificationDispatcher({ type: 'CLEAN_NOTIFICATION' }),
+        3000
+      );
+    },
+    onError: () => {
+      notificationDispatcher({ type: 'SET_NOTIFICATION', payload: 'Erros has occured.' });
+      setTimeout(
+        () => notificationDispatcher({ type: 'CLEAN_NOTIFICATION' }),
+        3000
+      );
     }
   });
 
