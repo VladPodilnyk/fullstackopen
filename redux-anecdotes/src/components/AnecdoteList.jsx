@@ -1,6 +1,8 @@
 import { useSelector, useDispatch } from 'react-redux'
-import { vote } from '../reducers/anecdoteReducer';
+import { init, vote } from '../reducers/anecdoteReducer';
 import { setNotification } from '../reducers/notificationReducer';
+import { useEffect } from 'react';
+import { anecodesService } from '../server/anecdotes';
 
 export const AnecdoteList = () => {
     const anecdotes = useSelector(state => {
@@ -15,13 +17,19 @@ export const AnecdoteList = () => {
 
         return state.anecdote;
     });
-    const dispatch = useDispatch()
+    const dispatch = useDispatch();
 
     const voteHandler = (id) => {
         dispatch(vote(id));
         const anecdote = anecdotes.find((value) => value.id === id);
         dispatch(setNotification(`You have voted for ${anecdote.content}`));
     }
+
+    useEffect(() => {
+      anecodesService.getAll().then((res) => {
+        dispatch(init(res));
+      })
+    }, [dispatch]);
 
     return (
         <>
