@@ -9,8 +9,7 @@ export const AnecdoteForm = () => {
     const addNote = async (event) => {
         event.preventDefault();
         const content = event.target.anecdote.value;
-        const result = await anecodesService.createNew(content);
-        dispatch(createAnecdote(result));
+        dispatch(createAnecdote(content));
         dispatch(setNotification("The new anectode has been created."));
         event.target.anecdote.value = "";
     }

@@ -13,12 +13,17 @@ const createNew = async (anecdote) => {
     votes: 0,
   });
 
-  console.log('debug >>> ', response.data);
   return response.data;
 };
+
+const update = async (id, newData) => {
+  const response = await axios.put(`${baseUrl}/${id}`, newData);
+  return response.data;
+}
 
 
 export const anecodesService = {
   getAll,
   createNew,
+  update
 };

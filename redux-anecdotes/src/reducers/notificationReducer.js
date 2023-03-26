@@ -5,7 +5,6 @@ const notificationSlice = createSlice({
   initialState: "",
   reducers: {
     setNotification(_state, action) {
-      console.log('DEBUG notification ', action);
       return action.payload;
     }
   }

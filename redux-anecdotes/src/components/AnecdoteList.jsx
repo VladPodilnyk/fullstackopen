@@ -1,8 +1,7 @@
 import { useSelector, useDispatch } from 'react-redux'
-import { init, vote } from '../reducers/anecdoteReducer';
+import { initAnecdotes, voteForeAnecdote } from '../reducers/anecdoteReducer';
 import { setNotification } from '../reducers/notificationReducer';
 import { useEffect } from 'react';
-import { anecodesService } from '../server/anecdotes';
 
 export const AnecdoteList = () => {
     const anecdotes = useSelector(state => {
@@ -11,7 +10,6 @@ export const AnecdoteList = () => {
                 return value.content.toLowerCase().includes(state.filter);
             });
 
-            console.log('debug >>> res = ', res);
             return res;
         }
 
@@ -20,15 +18,13 @@ export const AnecdoteList = () => {
     const dispatch = useDispatch();
 
     const voteHandler = (id) => {
-        dispatch(vote(id));
+        dispatch(voteForeAnecdote(id));
         const anecdote = anecdotes.find((value) => value.id === id);
         dispatch(setNotification(`You have voted for ${anecdote.content}`));
     }
 
     useEffect(() => {
-      anecodesService.getAll().then((res) => {
-        dispatch(init(res));
-      })
+      dispatch(initAnecdotes());
     }, [dispatch]);
 
     return (
